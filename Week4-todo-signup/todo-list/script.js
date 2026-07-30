@@ -178,6 +178,7 @@ function buildViewRow(todo) {
   const dragHandle = document.createElement("span");
   dragHandle.className = "todo-item__drag-handle";
   dragHandle.dataset.role = "drag-handle";
+  dragHandle.draggable = true;
   dragHandle.textContent = "⋮⋮";
   dragHandle.setAttribute("aria-hidden", "true");
 
