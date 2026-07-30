@@ -147,10 +147,11 @@ function renderTodos() {
     li.className = "todo-item";
     li.dataset.id = todo.id;
 
-
     if (todo.id === state.editingId) {
       li.append(...buildEditRow(todo));
     } else {
+      // 수정 1: li 태그 자체를 드래그 가능하게 설정
+      li.draggable = true;
       li.append(...buildViewRow(todo));
     }
 
@@ -175,7 +176,7 @@ function buildViewRow(todo) {
   const dragHandle = document.createElement("span");
   dragHandle.className = "todo-item__drag-handle";
   dragHandle.dataset.role = "drag-handle";
-  dragHandle.draggable = true;
+  // 수정 2: dragHandle의 draggable 제거 (li가 드래그 주체임)
   dragHandle.textContent = "⋮⋮";
   dragHandle.setAttribute("aria-hidden", "true");
 
@@ -379,7 +380,6 @@ function reorderTodos(sourceId, targetId, position) {
 
   const targetIndex = state.todos.findIndex((todo) => todo.id === targetId);
   if (targetIndex === -1) {
-    // 대상을 찾지 못하면 원래 자리로 복구
     state.todos.splice(sourceIndex, 0, movedTodo);
     return;
   }
@@ -430,7 +430,6 @@ filtersEl?.addEventListener("click", (event) => {
 
 themeToggleBtnEl?.addEventListener("click", toggleTheme);
 
-// 이벤트 위임: 체크박스/수정/저장/취소/삭제를 목록(listEl) 하나에만 등록
 listEl?.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
@@ -458,7 +457,6 @@ listEl?.addEventListener("click", (event) => {
   }
 });
 
-// 체크박스는 change 이벤트로 토글 (키보드 접근성 대응)
 listEl?.addEventListener("change", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
@@ -471,7 +469,6 @@ listEl?.addEventListener("change", (event) => {
   }
 });
 
-// 수정 입력창에서 Enter=저장, Escape=취소
 listEl?.addEventListener("keydown", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
@@ -492,18 +489,29 @@ listEl?.addEventListener("keydown", (event) => {
   }
 });
 
-// 드래그 시작: 드래그 핸들에서 시작한 경우에만 허용
-listEl?.addEventListener("dragstart", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLElement)) return;
+// 수정 3: 마우스 누른 지점이 손잡이인지 검증용 상태 변수
+let isHandleClicked = false;
 
-  const handle = target.closest('[data-role="drag-handle"]');
-  if (!handle) {
+listEl?.addEventListener("mousedown", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLElement && target.closest('[data-role="drag-handle"]')) {
+    isHandleClicked = true;
+  } else {
+    isHandleClicked = false;
+  }
+});
+
+// 드래그 시작: 손잡이를 누른 상태에서 li를 끌 때만 허용
+listEl?.addEventListener("dragstart", (event) => {
+  if (!isHandleClicked) {
     event.preventDefault();
     return;
   }
 
-  const itemEl = handle.closest(".todo-item");
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+
+  const itemEl = target.closest(".todo-item");
   const id = itemEl?.dataset.id;
   if (!id) return;
 
@@ -552,6 +560,7 @@ listEl?.addEventListener("dragend", () => {
   draggedId = null;
   dropTargetId = null;
   dropPosition = null;
+  isHandleClicked = false;
 });
 
 // 초기 렌더링
