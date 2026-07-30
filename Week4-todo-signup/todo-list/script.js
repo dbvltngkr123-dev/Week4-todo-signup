@@ -147,9 +147,6 @@ function renderTodos() {
     li.className = "todo-item";
     li.dataset.id = todo.id;
 
-    if (todo.id !== state.editingId) {
-      li.draggable = true;
-    }
 
     if (todo.id === state.editingId) {
       li.append(...buildEditRow(todo));
